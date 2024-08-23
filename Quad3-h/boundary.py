@@ -31,3 +31,20 @@ class Boundary:
         row = int((y - self.y_min) // cell_height)
 
         return row, column
+
+    def create_grid(self, grid_rows, grid_columns):
+        cell_width = self.get_cell_width(grid_columns)
+        cell_height = self.get_cell_height(grid_rows)
+
+        grid = []
+        for row in range(grid_rows):
+            grid_row = []
+            for col in range(grid_columns):
+                x_min = self.x_min + col * cell_width
+                x_max = x_min + cell_width
+                y_min = self.y_min + row * cell_height
+                y_max = y_min + cell_height
+                grid_row.append(Boundary(x_min, x_max, y_min, y_max))
+            grid.append(grid_row)
+
+        return grid

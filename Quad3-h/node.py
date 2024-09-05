@@ -1,3 +1,6 @@
+from boundary import Boundary
+
+
 class Node:
     def __init__(self, boundary: Boundary, capacity: int):
         """

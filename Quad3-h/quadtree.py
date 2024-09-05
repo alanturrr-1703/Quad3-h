@@ -1,3 +1,8 @@
+from boundary import Boundary
+from node import Node
+from point import Point
+
+
 class QuadTree:
     def __init__(self, boundary: Boundary, capacity: int):
         """

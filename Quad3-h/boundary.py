@@ -1,3 +1,6 @@
+from point import Point
+
+
 class Boundary:
     def __init__(self, x_center: float, y_center: float, half_width: float, half_height: float):
         """

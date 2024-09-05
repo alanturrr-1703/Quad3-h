@@ -1,50 +1,67 @@
 class Boundary:
-    def __init__(self, x_min, x_max, y_min, y_max):
-        self.x_min = x_min
-        self.x_max = x_max
-        self.y_min = y_min
-        self.y_max = y_max
+    def __init__(self, x_center: float, y_center: float, half_width: float, half_height: float):
+        """
+        Initialize the boundary as a rectangle or square.
+        """
+        self.x_center = x_center
+        self.y_center = y_center
+        self.half_width = half_width
+        self.half_height = half_height
 
-    def contains(self, point):
-        x, y = point
-        return self.x_min <= x <= self.x_max and self.y_min <= y <= self.y_max
+    def contains_point(self, point: Point) -> bool:
+        """
+        Check if the boundary contains a given point.
+        """
+        return (self.x_center - self.half_width <= point.x <= self.x_center + self.half_width and
+                self.y_center - self.half_height <= point.y <= self.y_center + self.half_height)
 
-    def intersects(self, other):
-        return not (self.x_max < other.x_min or self.x_min > other.x_max or
-                    self.y_max < other.y_min or self.y_min > other.y_max)
+    def intersects(self, other: 'Boundary') -> bool:
+        """
+        Check if this boundary intersects with another boundary.
+        """
+        return not (other.x_center - other.half_width > self.x_center + self.half_width or
+                    other.x_center + other.half_width < self.x_center - self.half_width or
+                    other.y_center - other.half_height > self.y_center + self.half_height or
+                    other.y_center + other.half_height < self.y_center - self.half_height)
 
-    def get_cell_width(self, grid_columns):
-        return (self.x_max - self.x_min) / grid_columns
+    def overlap_percentage(self, other: 'Boundary') -> float:
+        """
+        Calculate the percentage of overlap between two boundaries.
+        Useful for determining the degree of intersection.
+        """
+        dx = min(self.x_center + self.half_width, other.x_center + other.half_width) - max(self.x_center - self.half_width, other.x_center - other.half_width)
+        dy = min(self.y_center + self.half_height, other.y_center + other.half_height) - max(self.y_center - self.half_height, other.y_center - other.half_height)
 
-    def get_cell_height(self, grid_rows):
-        return (self.y_max - self.y_min) / grid_rows
+        if dx < 0 or dy < 0:
+            return 0.0  # No overlap
+        overlap_area = dx * dy
+        this_area = 2 * self.half_width * 2 * self.half_height
+        return overlap_area / this_area * 100  # Percentage of overlap
 
-    def get_grid_coordinates(self, point, grid_rows, grid_columns):
-        x, y = point
-        if not self.contains(point):
-            raise ValueError("Point is outside the boundary.")
+    def expand(self, factor: float) -> None:
+        """
+        Expand the boundary by a given factor. This is useful for extending query ranges.
+        """
+        self.half_width *= factor
+        self.half_height *= factor
 
-        cell_width = self.get_cell_width(grid_columns)
-        cell_height = self.get_cell_height(grid_rows)
+    def shrink(self, factor: float) -> None:
+        """
+        Shrink the boundary by a given factor. Useful for tighter bounding boxes.
+        """
+        self.half_width /= factor
+        self.half_height /= factor
 
-        column = int((x - self.x_min) // cell_width)
-        row = int((y - self.y_min) // cell_height)
+    def to_latlng(self, scale_factor: float = 1.0) -> dict:
+        """
+        Convert this boundary from a cartesian system to a latitude/longitude system.
+        """
+        return {
+            "lat_min": self.y_center - self.half_height * scale_factor,
+            "lat_max": self.y_center + self.half_height * scale_factor,
+            "lng_min": self.x_center - self.half_width * scale_factor,
+            "lng_max": self.x_center + self.half_width * scale_factor
+        }
 
-        return row, column
-
-    def create_grid(self, grid_rows, grid_columns):
-        cell_width = self.get_cell_width(grid_columns)
-        cell_height = self.get_cell_height(grid_rows)
-
-        grid = []
-        for row in range(grid_rows):
-            grid_row = []
-            for col in range(grid_columns):
-                x_min = self.x_min + col * cell_width
-                x_max = x_min + cell_width
-                y_min = self.y_min + row * cell_height
-                y_max = y_min + cell_height
-                grid_row.append(Boundary(x_min, x_max, y_min, y_max))
-            grid.append(grid_row)
-
-        return grid
+    def __repr__(self):
+        return f"Boundary(center=({self.x_center}, {self.y_center}), half_width={self.half_width}, half_height={self.half_height})"
